@@ -97,9 +97,8 @@ public class CoxCMAutoSplitter extends Plugin {
     if (e.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION && mes.startsWith("<col=ef20ff>")) {
       int duration = mes.indexOf(FL_COMPLETE_MES);
       boolean is_fl_time = duration != -1;
-      boolean is_olm_time = mes.contains("<br>");
 
-      if (!is_fl_time && !is_olm_time)
+      if (!is_fl_time)
         return;
 
       send_split();
