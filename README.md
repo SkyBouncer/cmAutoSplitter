@@ -1,7 +1,9 @@
 # Autosplitter for LiveSplits for Cox CM
 
-Sends a chosen key event on raid start, room cleared and floor change for Cox Challenge Mode.
-Using this plugin requires the Live Splits program or something similar, just make the split button the same in Live Splits and in the plugin's settings.
+Sends a split on raid start, room cleared and floor change for Cox Challenge Mode.
+Using this plugin requires the Live Splits program with the LiveSplit server component.
+
+Installation and setup guide can be found here: https://github.com/LiveSplit/LiveSplit.Server
 
 ## Splits
 The plugins sends a split on the following:
