@@ -5,6 +5,9 @@ Using this plugin requires the Live Splits program with the LiveSplit server com
 
 Installation and setup guide can be found here: https://github.com/LiveSplit/LiveSplit.Server
 
+## Templates
+Layout and splits templates for LiveSplit can be found in [LiveSplit templates](https://github.com/SkyBouncer/cmAutoSplitter/tree/master/LiveSplit%20templates)
+
 ## Splits
 The plugins sends a split on the following:
 
