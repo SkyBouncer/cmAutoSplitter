@@ -206,10 +206,15 @@ public class CoxCMAutoSplitter extends Plugin {
 
     @Override
     protected void startUp() throws IOException {
-        socket = new Socket("localhost", config.port());
-        writer = new PrintWriter(socket.getOutputStream());
-        String message = "Socket started at port " + config.port() + ".";
-        client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
+        try {
+            socket = new Socket("localhost", config.port());
+            writer = new PrintWriter(socket.getOutputStream());
+            String message = "Socket started at port <col=ff0000>" + config.port() + "</col>.";
+            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
+        } catch (Exception e) {
+            String message = "Could not start socket, did you start the LiveSplit server?";
+            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
+        }
     }
 
     @Override
