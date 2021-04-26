@@ -14,11 +14,12 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 
-import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
-import java.net.Socket;
-
 import javax.inject.Inject;
 
 import static sky.cmAutoSplitter.CoxUtil.ICE_DEMON;
@@ -26,7 +27,7 @@ import static sky.cmAutoSplitter.CoxUtil.getroom_type;
 
 @PluginDescriptor(name = "CM Auto splitter", description = "Auto splitter for live splits for cox cm")
 public class CoxCMAutoSplitter extends Plugin {
-
+    private NavigationButton navButton;
     private static final int RAID_STATE_VARBIT = 5425;
     private int prevRaidState = -1;
 
@@ -36,8 +37,10 @@ public class CoxCMAutoSplitter extends Plugin {
     @Inject
     private CoxCMAutoSplitterConfig config;
 
+    @Inject
+    private ClientToolbar clientToolbar;
+
     // LiveSplit server
-    Socket socket;
     PrintWriter writer;
 
     // Room state
@@ -59,7 +62,6 @@ public class CoxCMAutoSplitter extends Plugin {
 
     @Subscribe
     public void onClientTick(ClientTick e) {
-
         if (client.getGameState() != GameState.LOGGED_IN)
             return;
 
@@ -196,8 +198,10 @@ public class CoxCMAutoSplitter extends Plugin {
     }
 
     private void send_split() {
-        writer.write("startorsplit\r\n");
-        writer.flush();
+        try {
+            writer.write("startorsplit\r\n");
+            writer.flush();
+        } catch (Exception ignored) { }
     }
 
     private int clock() {
@@ -205,21 +209,18 @@ public class CoxCMAutoSplitter extends Plugin {
     }
 
     @Override
-    protected void startUp() throws IOException {
-        try {
-            socket = new Socket("localhost", config.port());
-            writer = new PrintWriter(socket.getOutputStream());
-            String message = "Socket started at port <col=ff0000>" + config.port() + "</col>.";
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
-        } catch (Exception e) {
-            String message = "Could not start socket, did you start the LiveSplit server?";
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
-        }
+    protected void startUp() {
+        final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/icon.png");
+        CoxCMAutoSplitterPanel panel = new CoxCMAutoSplitterPanel(client, writer, config, this);
+        navButton = NavigationButton.builder().tooltip("LiveSplit controller")
+                .icon(icon).priority(6).panel(panel).build();
+        clientToolbar.addNavigation(navButton);
+
+        panel.startPanel();
     }
 
     @Override
-    protected void shutDown() throws IOException {
-        socket.close();
-        client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Socket closed.", null);
+    protected void shutDown() {
+        clientToolbar.removeNavigation(navButton);
     }
 }
