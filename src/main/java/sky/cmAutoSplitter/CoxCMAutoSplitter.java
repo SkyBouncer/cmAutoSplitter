@@ -25,11 +25,8 @@ import javax.inject.Inject;
 import static sky.cmAutoSplitter.CoxUtil.ICE_DEMON;
 import static sky.cmAutoSplitter.CoxUtil.getroom_type;
 
-@PluginDescriptor(name = "CM Auto splitter", description = "Auto splitter for live splits for cox cm")
+@PluginDescriptor(name = "CM Auto splitter", description = "Auto splitter for LiveSplit for cox cm")
 public class CoxCMAutoSplitter extends Plugin {
-    private NavigationButton navButton;
-    private static final int RAID_STATE_VARBIT = 5425;
-    private int prevRaidState = -1;
 
     @Inject
     private Client client;
@@ -42,6 +39,14 @@ public class CoxCMAutoSplitter extends Plugin {
 
     // LiveSplit server
     PrintWriter writer;
+
+    // side panel
+    private NavigationButton navButton;
+    private CoxCMAutoSplitterPanel panel;
+
+    // for determining raid start
+    private static final int RAID_STATE_VARBIT = 5425;
+    private int prevRaidState = -1;
 
     // Room state
     private boolean in_raid;
@@ -211,7 +216,7 @@ public class CoxCMAutoSplitter extends Plugin {
     @Override
     protected void startUp() {
         final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/icon.png");
-        CoxCMAutoSplitterPanel panel = new CoxCMAutoSplitterPanel(client, writer, config, this);
+        panel = new CoxCMAutoSplitterPanel(client, writer, config, this);
         navButton = NavigationButton.builder().tooltip("LiveSplit controller")
                 .icon(icon).priority(6).panel(panel).build();
         clientToolbar.addNavigation(navButton);
@@ -222,5 +227,6 @@ public class CoxCMAutoSplitter extends Plugin {
     @Override
     protected void shutDown() {
         clientToolbar.removeNavigation(navButton);
+        panel.disconnect();  // terminates active socket
     }
 }

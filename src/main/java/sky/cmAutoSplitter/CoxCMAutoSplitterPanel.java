@@ -29,9 +29,6 @@ public class CoxCMAutoSplitterPanel extends PluginPanel
         this.splitter = splitter;
     }
 
-    // TODO Make buttons not have the wierd outline when clicked
-    // TODO Make the icon have transparent border
-
     private void connect(){
         try {
             socket = new Socket("localhost", config.port());
@@ -46,12 +43,14 @@ public class CoxCMAutoSplitterPanel extends PluginPanel
             }
 
         } catch (Exception e) {
-            String message = "Could not start socket, did you start the LiveSplit server?";
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
+            if (client.getGameState() == GameState.LOGGED_IN) {
+                String message = "Could not start socket, did you start the LiveSplit server?";
+                client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
+            }
         }
     }
 
-    private void disconnect(){
+    public void disconnect(){
         try {
             socket.close();
             set_disconnected();
@@ -63,8 +62,10 @@ public class CoxCMAutoSplitterPanel extends PluginPanel
     }
 
     private void control(String cmd){
-        writer.write(cmd + "\r\n");
-        writer.flush();
+        try {
+            writer.write(cmd + "\r\n");
+            writer.flush();
+        } catch (Exception ignored) { }
     }
 
     public void startPanel(){
@@ -95,6 +96,8 @@ public class CoxCMAutoSplitterPanel extends PluginPanel
 
         JButton b_connect = new JButton("Connect");
         JButton b_disconnect = new JButton("Disconnect");
+        b_connect.setFocusable(false);
+        b_disconnect.setFocusable(false);
 
         b_connect.addActionListener(e -> connect());
         b_disconnect.addActionListener(e -> disconnect());
@@ -107,26 +110,17 @@ public class CoxCMAutoSplitterPanel extends PluginPanel
         controllerFrame.setLayout(new GridLayout(6, 1));
         controllerFrame.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.CYAN), "LiveSplit Controller"));
 
-        JButton b_split = new JButton("Split");
-        JButton b_reset = new JButton("Reset");
-        JButton b_undo = new JButton("Undo split");
-        JButton b_skip = new JButton("Skip split");
-        JButton b_pause = new JButton("Pause");
-        JButton b_resume = new JButton("Resume");
+        JButton[] controllerButtons = {new JButton("Split"), new JButton("Reset"), new JButton("Undo split"),
+                                       new JButton("Skip split"), new JButton("Pause"), new JButton("Resume")};
+        String[] controls = {"startorsplit", "reset", "unsplit", "skipsplit", "pause", "resume"};
 
-        b_split.addActionListener(e -> control("startorsplit"));
-        b_reset.addActionListener(e -> control("reset"));
-        b_undo.addActionListener(e -> control("unsplit"));
-        b_skip.addActionListener(e -> control("skipsplit"));
-        b_pause.addActionListener(e -> control("pause"));
-        b_resume.addActionListener(e -> control("resume"));
+        for (int i = 0; i < controllerButtons.length; i++){
+            int finalI = i; // because lambda forces my hand
+            controllerButtons[i].addActionListener(e -> control(controls[finalI]));
 
-        controllerFrame.add(b_split, BorderLayout.CENTER);
-        controllerFrame.add(b_reset, BorderLayout.CENTER);
-        controllerFrame.add(b_undo, BorderLayout.CENTER);
-        controllerFrame.add(b_skip, BorderLayout.CENTER);
-        controllerFrame.add(b_pause, BorderLayout.CENTER);
-        controllerFrame.add(b_resume, BorderLayout.CENTER);
+            controllerButtons[i].setFocusable(false);
+            controllerFrame.add(controllerButtons[i], BorderLayout.CENTER);
+        }
 
         layout.add(statusFrame);
         layout.add(Box.createRigidArea(new Dimension(0, 15)));
