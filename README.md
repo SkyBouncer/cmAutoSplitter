@@ -19,6 +19,7 @@ Turn the plugin on and make sure the port in the plugin settings match your Live
 ![config](readme_images/config.png)
 
 Start LiveSplit and start the LiveSplit server (right click LS -> control -> start server)
+Make sure to add the LS server to your layout, otherwise you won't see "start server" under control.
 
 ![lsserver](readme_images/livesplit.png)
 
