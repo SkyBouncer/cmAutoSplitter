@@ -1,8 +1,10 @@
-# Autosplitter for LiveSplit for Cox CM
+# Autosplitter for LiveSplit for Cox and CM
 
 [![Active Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/CM-Auto-splitter)](https://runelite.net/plugin-hub/sky)
 
 Sends a split on raid start, room cleared and floor change for Cox Challenge Mode.
+Also has a toggle to only split on floor finish, to be useable for regular chambers.
+
 Using this plugin requires the LiveSplit program with the LiveSplit server component.
 
 Installation and setup guide can be found here:

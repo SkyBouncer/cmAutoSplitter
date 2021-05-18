@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import static sky.cmAutoSplitter.CoxUtil.ICE_DEMON;
 import static sky.cmAutoSplitter.CoxUtil.getroom_type;
 
-@PluginDescriptor(name = "CM Auto splitter", description = "Auto splitter for LiveSplit for cox cm")
+@PluginDescriptor(name = "CoX Auto splitter", description = "Auto splitter for LiveSplit for cox cm")
 public class CoxCMAutoSplitter extends Plugin {
 
     @Inject
@@ -91,7 +91,7 @@ public class CoxCMAutoSplitter extends Plugin {
                 continue;
             }
             int flags = client.getCollisionMaps()[p].getFlags()[x][y];
-            if ((flags & 0x100) == 0) {
+            if ((flags & 0x100) == 0 && !config.regular()) {
                 // combat and puzzle rooms
                 send_split();
                 this.cryp[i] = -1;
@@ -132,7 +132,7 @@ public class CoxCMAutoSplitter extends Plugin {
                 break;
             case 30013:
                 // Muttadile tree placeholder spawned after tree cut
-                if (config.splitMuttadileTree() && !treecut) {
+                if (config.splitMuttadileTree() && !treecut && !config.regular()) {
                     send_split();
                     treecut = true;
                 }
@@ -178,7 +178,7 @@ public class CoxCMAutoSplitter extends Plugin {
 
     @Subscribe
     public void onGraphicsObjectCreated(GraphicsObjectCreated e) {
-        if (config.splitIcePop() && e.getGraphicsObject().getId() == SMOKE_PUFF && !iceout) {
+        if (config.splitIcePop() && e.getGraphicsObject().getId() == SMOKE_PUFF && !iceout && !config.regular()) {
             WorldPoint wp = WorldPoint.fromLocal(client, e.getGraphicsObject().getLocation());
             int p = client.getPlane();
             int x = wp.getX() - client.getBaseX();

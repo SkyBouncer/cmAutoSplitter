@@ -21,4 +21,9 @@ public interface CoxCMAutoSplitterConfig extends Config {
     default int port() {
         return 16834;
     }
+
+    @ConfigItem(position = 3, keyName = "regular", name = "Split only on floors", description = "Split only on floor changes, useful for regular cox.")
+    default boolean regular() {
+        return false;
+    }
 }
