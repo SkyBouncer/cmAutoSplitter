@@ -26,4 +26,9 @@ public interface CoxCMAutoSplitterConfig extends Config {
     default boolean regular() {
         return false;
     }
+
+    @ConfigItem(position = 4, keyName = "autoReset", name = "Automatic reset", description = "Automatically reset when starting a new raid.")
+    default boolean autoReset() {
+        return false;
+    }
 }
