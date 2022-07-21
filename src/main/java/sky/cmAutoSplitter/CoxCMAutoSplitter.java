@@ -197,6 +197,9 @@ public class CoxCMAutoSplitter extends Plugin {
         // when the raid starts
         int raidState = client.getVarbitValue(RAID_STATE_VARBIT);
         if (prevRaidState == 0 && raidState == 1){
+            if (config.autoReset()) {
+                send_reset();
+            }
             send_split();
         }
         prevRaidState = raidState;
@@ -205,6 +208,13 @@ public class CoxCMAutoSplitter extends Plugin {
     private void send_split() {
         try {
             writer.write("startorsplit\r\n");
+            writer.flush();
+        } catch (Exception ignored) { }
+    }
+
+    private void send_reset() {
+        try {
+            writer.write("reset\r\n");
             writer.flush();
         } catch (Exception ignored) { }
     }
