@@ -9,7 +9,14 @@ import com.google.inject.Provides;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.events.*;
+import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameObjectDespawned;
+import net.runelite.api.events.GraphicsObjectCreated;
+import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.ObjectID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -45,7 +52,6 @@ public class CoxCMAutoSplitter extends Plugin {
     private CoxCMAutoSplitterPanel panel;
 
     // for determining raid start
-    private static final int RAID_STATE_VARBIT = 5425;
     private int prevRaidState = -1;
 
     // Room state
@@ -70,7 +76,7 @@ public class CoxCMAutoSplitter extends Plugin {
         if (client.getGameState() != GameState.LOGGED_IN)
             return;
 
-        if (clock() == 0 || !client.isInInstancedRegion()) {
+        if (client.getVarbitValue(VarbitID.RAIDS_TIMER) == 0 || !client.getTopLevelWorldView().isInstance()) {
             in_raid = false;
             return;
         }
@@ -80,17 +86,26 @@ public class CoxCMAutoSplitter extends Plugin {
             iceout = false;
             treecut = false;
         }
+
+        int top_level_x = client.getTopLevelWorldView().getBaseX();
+        int top_level_y = client.getTopLevelWorldView().getBaseY();
+        int top_level_p = client.getTopLevelWorldView().getPlane();
+        CollisionData[] collision_maps = client.getTopLevelWorldView().getCollisionMaps();
+        if (collision_maps == null) {
+            return;
+        }
+
         for (int i = 0; i < 16; i++) {
             if (this.cryp[i] == -1)
                 continue;
             int p = cryp[i];
-            int x = cryx[i] - client.getBaseX();
-            int y = cryy[i] - client.getBaseY();
-            if (p != client.getPlane() || x < 0 || x >= 104 || y < 0 || y >= 104) {
+            int x = cryx[i] - top_level_x;
+            int y = cryy[i] - top_level_y;
+            if (p != top_level_p || x < 0 || x >= 104 || y < 0 || y >= 104) {
                 this.cryp[i] = -1;
                 continue;
             }
-            int flags = client.getCollisionMaps()[p].getFlags()[x][y];
+            int flags = collision_maps[p].getFlags()[x][y];
             if ((flags & 0x100) == 0 && !config.regular()) {
                 // combat and puzzle rooms
                 send_split();
@@ -99,12 +114,12 @@ public class CoxCMAutoSplitter extends Plugin {
         }
     }
 
-    private static final String FL_COMPLETE_MES = "level complete! Duration: </col><col=ff0000>";
+    private static final String FL_COMPLETE_MES = "level complete! Duration:";
 
     @Subscribe
     public void onChatMessage(ChatMessage e) {
         String mes = e.getMessage();
-        if (e.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION && mes.startsWith("<col=ef20ff>")) {
+        if (e.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) {
             int duration = mes.indexOf(FL_COMPLETE_MES);
             boolean is_fl_time = duration != -1;
 
@@ -125,42 +140,42 @@ public class CoxCMAutoSplitter extends Plugin {
     public void onGameObjectSpawned(GameObjectSpawned e) {
         GameObject go = e.getGameObject();
         switch (go.getId()) {
-            case 29881: // Olm spawned
+            case ObjectID.OLM_HEAD: // Olm spawned
                 if (olm_phase < 0) {
                     olm_phase = ~olm_phase;
                 }
                 break;
-            case 30013:
+            case ObjectID.RAIDS_MEAT_TREE_EMPTY:
                 // Muttadile tree placeholder spawned after tree cut
                 if (config.splitMuttadileTree() && !treecut && !config.regular()) {
                     send_split();
                     treecut = true;
                 }
                 break;
-            case 26209: // shamans/thieving/guardians
-            case 29741: // mystics
-            case 29749: // tightrope
-            case 29753: // crabs
-            case 29754:
-            case 29755:
-            case 29756:
-            case 29757:
-            case 29876: // ice
-            case 30016: // vasa
-            case 30017: // tekton/vanguards
-            case 30018: // mutt
-            case 30070: // vespula
+            case ObjectID.INVISIBLE_TYPE8_BLOCKING: // shamans/thieving/guardians
+            case ObjectID.RAIDS_SKELETALMYSTICS_SYMBOL: // mystics
+            case ObjectID.RAIDS_TIGHTROPE_BARRIER: // tightrope
+            case ObjectID.RAIDS_LASERCRABS_BIGCRYSTAL_1: // crabs
+            case ObjectID.RAIDS_LASERCRABS_BIGCRYSTAL_2:
+            case ObjectID.RAIDS_LASERCRABS_BIGCRYSTAL_3:
+            case ObjectID.RAIDS_LASERCRABS_BIGCRYSTAL_4:
+            case ObjectID.RAIDS_LASERCRABS_BIGCRYSTAL_5:
+            case ObjectID.RAIDS_ICEDEMON_SNOW: // ice
+            case ObjectID.RAIDS_BLOCKAGE_PURPLE_SMALL: // vasa
+            case ObjectID.RAIDS_BLOCKAGE_ORANGE: // tekton/vanguards
+            case ObjectID.RAIDS_BLOCKAGE_GREEN: // mutt
+            case ObjectID.RAIDS_VESPULA_BOIL_BLOCKING: // vespula
                 Point pt = go.getSceneMinLocation();
                 int p = go.getPlane();
                 int x = pt.getX();
                 int y = pt.getY();
-                int template = client.getInstanceTemplateChunks()[p][x / 8][y / 8];
+                int template = client.getTopLevelWorldView().getInstanceTemplateChunks()[p][x / 8][y / 8];
                 int roomtype = getroom_type(template);
                 if (roomtype < 16) {
                     // add obstacle to list
                     cryp[roomtype] = p;
-                    cryx[roomtype] = x + client.getBaseX();
-                    cryy[roomtype] = y + client.getBaseY();
+                    cryx[roomtype] = x + client.getTopLevelWorldView().getBaseX();
+                    cryy[roomtype] = y + client.getTopLevelWorldView().getBaseY();
                 }
                 break;
         }
@@ -168,22 +183,22 @@ public class CoxCMAutoSplitter extends Plugin {
 
     @Subscribe
     public void onGameObjectDespawned(GameObjectDespawned e) {
-        if (e.getGameObject().getId() == ObjectID.LARGE_HOLE_29881) {
+        if (e.getGameObject().getId() == ObjectID.OLM_HEAD) {
             send_split();
             olm_phase = ~olm_phase;
         }
     }
 
-    private static final int SMOKE_PUFF = 188;
+    private static final int SMOKE_PUFF = ObjectID.GNOME_GLIDERCRASHED;
 
     @Subscribe
     public void onGraphicsObjectCreated(GraphicsObjectCreated e) {
         if (config.splitIcePop() && e.getGraphicsObject().getId() == SMOKE_PUFF && !iceout && !config.regular()) {
             WorldPoint wp = WorldPoint.fromLocal(client, e.getGraphicsObject().getLocation());
-            int p = client.getPlane();
-            int x = wp.getX() - client.getBaseX();
-            int y = wp.getY() - client.getBaseY();
-            int template = client.getInstanceTemplateChunks()[p][x / 8][y / 8];
+            int p = client.getTopLevelWorldView().getPlane();
+            int x = wp.getX() - client.getTopLevelWorldView().getBaseX();
+            int y = wp.getY() - client.getTopLevelWorldView().getBaseY();
+            int template = client.getTopLevelWorldView().getInstanceTemplateChunks()[p][x / 8][y / 8];
             if (CoxUtil.getroom_type(template) == ICE_DEMON) {
                 send_split();
                 iceout = true;
@@ -195,7 +210,7 @@ public class CoxCMAutoSplitter extends Plugin {
     public void onVarbitChanged(VarbitChanged e)
     {
         // when the raid starts
-        int raidState = client.getVarbitValue(RAID_STATE_VARBIT);
+        int raidState = client.getVarbitValue(VarbitID.RAIDS_CLIENT_PROGRESS);
         if (prevRaidState == 0 && raidState == 1){
             if (config.autoReset()) {
                 send_reset();
@@ -217,10 +232,6 @@ public class CoxCMAutoSplitter extends Plugin {
             writer.write("reset\r\n");
             writer.flush();
         } catch (Exception ignored) { }
-    }
-
-    private int clock() {
-        return client.getVarbitValue(6386);
     }
 
     @Override
